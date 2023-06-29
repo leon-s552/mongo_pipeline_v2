@@ -1,0 +1,30 @@
+[
+    {
+        "table_name": "logins", 
+        "UID_field": "_id",
+        "update_field": "timestamp",
+        "refresh_time": "60",
+        "change_capture": "False"
+    },
+    {
+        "table_name": "companies",
+        "UID_field": "_id",
+        "update_field": "updated",
+        "refresh_time": "60",
+        "change_capture": "False"
+    },
+    {
+        "table_name": "connection_data", 
+        "UID_field": "_id",
+        "update_field": "modified",
+        "refresh_time": "60",
+        "change_capture": "True"
+    },
+    {
+        "table_name": "users", 
+        "UID_field": "_id",
+        "update_field": "metadata__logins__last",
+        "refresh_time": "60",
+        "change_capture": "True"
+    }
+]

@@ -1,0 +1,1 @@
+StructType([StructField('_id', StringType(), True), StructField('browser', StringType(), True), StructField('ip', StringType(), True), StructField('success', BooleanType(), True), StructField('timestamp', TimestampType(), True), StructField('user', StringType(), True)])
