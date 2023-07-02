@@ -1,9 +1,9 @@
 [ingest_parameters]
 source = "mongodb"
 source_scope = "key-vault-secrets"
-source_key = "ks-dbw-bac-mongo-connection-string"
-source_database = "bactracker-prd"
+source_key = "ks-dbw-nsp-mongo-connection-string"
+source_database = "nsptracker-prd"
 storage_scope = "key-vault-secrets"
 storage_key = "storage-account-accesskey"
-storage_account = "stbacprdprod"
+storage_account = "stdataplatform2303dev"
 storage_container = "data"

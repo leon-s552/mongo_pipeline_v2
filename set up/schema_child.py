@@ -20,6 +20,7 @@ print(config)
 
 parent_payload = eval(dbutils.widgets.getArgument("table_data"))
 table_name = parent_payload['table_name']
+
 config = toml.load(f"/Workspace/{root_path}/config/config.toml")
 
 storage_account_name = config["ingest_parameters"]["storage_account"]
@@ -112,10 +113,16 @@ if overwrite_existing == True:
 
     structuredconnectionSchema = query.schema
     
+    
+    os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/structured_{table_name}_schema.txt"), exist_ok=True)
 
-    dbutils.fs.put(f"abfss://{storage_container}@{storage_account_name}.dfs.core.windows.net/config/schema/{table_name}/structured_{table_name}_schema.txt", str(repr(structuredconnectionSchema)), True)
+    open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/structured_{table_name}_schema.txt", "w").write(str(repr(structuredconnectionSchema)))
 
-    dbutils.fs.put(f"abfss://{storage_container}@{storage_account_name}.dfs.core.windows.net/config/schema/{table_name}/flat_structured_{table_name}_schema.txt", str(repr(flatstructuredconnectionSchema)), True)
+
+
+    os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/flat_structured_{table_name}_schema.txt"), exist_ok=True)
+
+    open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/flat_structured_{table_name}_schema.txt", "w").write(str(repr(flatstructuredconnectionSchema)))
 
 
     rawconnectionSchema = "StructType(["
@@ -124,7 +131,11 @@ if overwrite_existing == True:
 
     rawconnectionSchema = (rawconnectionSchema.strip(',') + "])")
 
-    dbutils.fs.put(f"abfss://{storage_container}@{storage_account_name}.dfs.core.windows.net/config/schema/{table_name}/raw_{table_name}_schema.txt", str(repr(rawconnectionSchema)), True)
+
+    os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/raw_{table_name}_schema.txt"), exist_ok=True)
+
+    open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/raw_{table_name}_schema.txt", "w").write(str(repr(rawconnectionSchema)))
+
 
 # COMMAND ----------
 

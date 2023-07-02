@@ -1,4 +1,39 @@
 # Databricks notebook source
+#choose which version of the configuration file to load. "local" pulls from the repository, "backup" pulls from blob storage and manual from text this set up notebook. Importing from github will overwrite the local and manual versions
+
+config_location = 'manual'
+#config_location = 'local'
+#config_location = 'backup' 
+
+#create or recreate backup config file
+overwrite_backup = True
+
+#if using backup config file input location of the backup in blob storage
+storage_container = 'data'
+storage_account_name = 'stdataplatform2303dev'
+storage_scope = "key-vault-secrets"
+storage_key = "storage-account-accesskey"
+
+
+compute_cluster_id_1 = '0321-223127-h7a2kk'
+timeout_seconds = 1000
+
+# COMMAND ----------
+
+config_toml_text = '''
+[ingest_parameters]
+source = "mongodb"
+source_scope = "key-vault-secrets"
+source_key = "ks-dbw-nsp-mongo-connection-string"
+source_database = "nsptracker-prd"
+storage_scope = "key-vault-secrets"
+storage_key = "storage-account-accesskey"
+storage_account = "stdataplatform2303dev"
+storage_container = "data"
+'''
+
+# COMMAND ----------
+
 from datetime import datetime, timedelta
 from databricks.sdk import *
 from databricks.sdk.service.jobs import *
@@ -12,34 +47,53 @@ import toml
 
 root_path = '/'.join(json.loads(dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson())['extraContext']['notebook_path'].split('/')[:-2]).strip('/')
 
-config = toml.load(f"/Workspace/{root_path}/config/config.toml")
-storage_account_name = config["ingest_parameters"]["storage_account"]
-
-config = toml.load(f"/Workspace/{root_path}/config/config.toml")
-
-source_name = storage_account_name = config["ingest_parameters"]["source"]
-storage_account_name = config["ingest_parameters"]["storage_account"]
-storage_container = config["ingest_parameters"]["storage_container"]
-database_name = config["ingest_parameters"]["source_database"]
-
-storage_scope = config["ingest_parameters"]["storage_scope"]
-storage_key = config["ingest_parameters"]["storage_key"]
-
-
-# COMMAND ----------
-
-compute_cluster_id = '0321-223127-h7a2kk'
-
 table_list = json.loads((open(f"/Workspace/{root_path}/config/table_master.json", "r").read()))
 
 pool = ThreadPool(len(table_list) * 4)
-timeout_seconds = 1000
+
+# COMMAND ----------
+
+if config_location == 'manual':
+    config = toml.loads(config_toml_text)
+    toml.dump(config, open(f"/Workspace/{root_path}/config/config.toml",'w'))
+elif config_location == 'local':
+    config = toml.load(f"/Workspace/{root_path}/config/config.toml")
+    toml.dump(config, open(f"/Workspace/{root_path}/config/config.toml",'w'))
+elif config_location == 'backup':
+    if not any(mount.source == f"wasbs://{storage_container}@{storage_account_name}.blob.core.windows.net" for mount in dbutils.fs.mounts()):
+        dbutils.fs.mount(f"wasbs://{storage_container}@{storage_account_name}.blob.core.windows.net", '/mnt',  extra_configs = {f"fs.azure.account.key.{storage_account_name}.blob.core.windows.net":dbutils.secrets.get(scope = storage_scope, key=storage_key)})
+    config = toml.loads((dbutils.fs.head('dbfs:/mnt/config/config.toml')))
+    toml.dump(config, open(f"/Workspace/{root_path}/config/config.toml",'w'))
+else:
+    dbutils.notebook.exit()
+
+if overwrite_backup == True and config_location != 'backup':
+    storage_account_name = config["ingest_parameters"]["storage_account"]
+    storage_container = config["ingest_parameters"]["storage_container"]
+    storage_scope = config["ingest_parameters"]["storage_scope"]
+    storage_key = config["ingest_parameters"]["storage_key"]
+    spark.conf.set(f"fs.azure.account.key.{storage_account_name}.dfs.core.windows.net",dbutils.secrets.get(scope=storage_scope, key=storage_key))
+    dbutils.fs.put(f"abfss://{storage_container}@{storage_account_name}.dfs.core.windows.net/config/config.toml", toml.dumps(config), True)
+
+# COMMAND ----------
+
+source_name = config["ingest_parameters"]["source"]
+database_name = config["ingest_parameters"]["source_database"]
+
+storage_account_name = config["ingest_parameters"]["storage_account"]
+storage_container = config["ingest_parameters"]["storage_container"]
+
+storage_scope = config["ingest_parameters"]["storage_scope"]
+storage_key = config["ingest_parameters"]["storage_key"]
 
 # COMMAND ----------
 
 spark.conf.set(
     f"fs.azure.account.key.{storage_account_name}.dfs.core.windows.net",
     dbutils.secrets.get(scope=storage_scope, key=storage_key))
+
+if not any(mount.source == f"wasbs://{storage_container}@{storage_account_name}.blob.core.windows.net" for mount in dbutils.fs.mounts()):
+        dbutils.fs.mount(f"wasbs://{storage_container}@{storage_account_name}.blob.core.windows.net", '/mnt',  extra_configs = {f"fs.azure.account.key.{storage_account_name}.blob.core.windows.net":dbutils.secrets.get(scope = storage_scope, key=storage_key)})
 
 # COMMAND ----------
 
@@ -48,11 +102,12 @@ display(table_list)
 # COMMAND ----------
 
 # DBTITLE 1,schema generation/refresh
+
 day_delta = 60
 schema_upper_range = datetime.now().strftime("%FT%T.%fZ")
 schema_lower_range = (datetime.now() - timedelta(minutes = 1440 * day_delta)).strftime("%FT%T.%fZ")
 exclude_fields = ['credentials','api_keys','password','firstname','lastname']
-overwrite_existing = True
+overwrite_existing = False
 
 schema_sample_size = 10000
 
@@ -161,7 +216,7 @@ for x in notebook_list:
             task_key = f"{notebook_name}",
             depends_on = dependancies,
             description = f"{description}",
-            existing_cluster_id = f"{compute_cluster_id}",
+            existing_cluster_id = f"{compute_cluster_id_1}",
             notebook_task = NotebookTask(
                                         base_parameters = dict(""),
                                         notebook_path = f"{notebook_path}",
