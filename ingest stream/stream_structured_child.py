@@ -48,6 +48,10 @@ raw_table = parent_payload['table_name']
 UID_field = parent_payload['UID_field']
 update_field = parent_payload['update_field']
 change_capture = parent_payload['change_capture']
+try:
+    array_column = parent_payload['array_column']
+except:
+    array_column = ''
 
 storage_account_name = config["ingest_parameters"]["storage_account"]
 storage_container = config["ingest_parameters"]["storage_container"]
@@ -105,10 +109,10 @@ deltaTable = DeltaTable.forPath(spark, structured_path)
 
 def batchprocess(microBatchOutputDF, batchId):
     microBatchOutputDF = schemaconversion(microBatchOutputDF, structuredconnectionSchema, batchId)
+    microBatchOutputDF = arrayExplode(microBatchOutputDF, array_column, batchId)
     microBatchOutputDF = dataFlatten(microBatchOutputDF, batchId)
     microBatchOutputDF = removebatchduplicates(microBatchOutputDF, UID_field, update_field, change_capture, batchId)
     microBatchOutputDF = upsertToDelta(microBatchOutputDF, deltaTable, UID_field, update_field, change_capture, batchId)
-    
     
 
 (spark.readStream

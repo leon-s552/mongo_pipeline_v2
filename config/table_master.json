@@ -14,11 +14,12 @@
         "change_capture": "False"
     },
     {
-        "table_name": "data.bank_account_balances", 
+        "table_name": "data.bank_accounts", 
         "UID_field": "_id",
         "update_field": "updated",
         "refresh_time": "60",
-        "change_capture": "True"
+        "change_capture": "True",
+        "array_column": "data"
     },
     {
         "table_name": "connection_data", 

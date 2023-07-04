@@ -56,6 +56,17 @@ def schemaFlatten(schema, prefix=None):
             fields.append(col(name).alias(name.replace('.','__')))
     return fields
 
+def arrayExplode(ArrayDataframe , ArrayColumn, batchId):
+    if ArrayColumn in ArrayDataframe.columns:
+        json_string = ArrayDataframe.select(col(ArrayColumn).alias('j')).rdd.map(lambda x: x.j)
+        schema_struct = spark.read.json(json_string).schema
+        schema_array = eval('ArrayType('+str(schema_struct)+',True)')
+        ArrayDataframe = ArrayDataframe.select('*', from_json(ArrayColumn, schema=schema_array).alias('jsonread'))
+        ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, explode('jsonread')).drop('jsonread')
+    else:
+        ArrayDataframe
+    return ArrayDataframe
+
 def dataFlatten(microBatchOutputDF, batchId):
     flattened_schema = schemaFlatten(microBatchOutputDF.schema)
     microBatchOutputDF = microBatchOutputDF.select(flattened_schema)

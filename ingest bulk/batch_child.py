@@ -3,7 +3,7 @@
 
 # COMMAND ----------
 
-#dbutils.widgets.text('table_data', '''{'table_name': 'users', 'UID_field': '_id', 'update_field': 'metadata__logins__last', 'refresh_time': '60', 'change_capture': 'True', 'schema_lower_range': '2023-04-29T00:49:52.474261Z', 'schema_upper_range': '2023-06-28T00:49:52.474135Z', 'schema_sample_size': 10000, 'exclude_fields': ['credentials', 'api_keys', 'password', 'firstname', 'lastname'], 'overwrite_existing': True, 'batch_lower_range': '2021-07-08T00:50:16.779220Z', 'batch_upper_range': '2023-06-14T12:50:16.779297Z'}''')
+#dbutils.widgets.text('table_data', '''{'table_name': 'data.bank_accounts', 'UID_field': '_id', 'update_field': 'updated', 'refresh_time': '60', 'change_capture': 'True', 'schema_lower_range': '2023-06-03T00:34:52.158336Z', 'schema_upper_range': '2023-07-03T00:34:52.158246Z', 'schema_sample_size': 10000, 'exclude_fields': ['credentials', 'api_keys', 'password', 'firstname', 'lastname'], 'overwrite_existing': True, 'batch_lower_range': '2021-07-13T00:41:48.791992Z', 'batch_upper_range': '2023-06-19T12:41:48.792085Z'}''')
 
 # COMMAND ----------
 

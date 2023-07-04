@@ -13,7 +13,7 @@ import toml
 table_list = json.loads('''
 [
     {
-        "table_name": "data.bank_account_balances", 
+        "table_name": "data.bank_accounts", 
         "UID_field": "_id",
         "update_field": "updated",
         "refresh_time": "60",
@@ -57,7 +57,8 @@ display(table_list)
 
 # DBTITLE 1,schema generation/refresh
 
-day_delta = 60
+day_delta = 150
+
 schema_upper_range = datetime.now().strftime("%FT%T.%fZ")
 schema_lower_range = (datetime.now() - timedelta(minutes = 1440 * day_delta)).strftime("%FT%T.%fZ")
 exclude_fields = ['credentials','api_keys','password','firstname','lastname']

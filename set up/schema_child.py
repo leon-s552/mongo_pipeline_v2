@@ -1,4 +1,12 @@
 # Databricks notebook source
+dbutils.widgets.removeAll()
+
+# COMMAND ----------
+
+dbutils.widgets.text('table_data', '''{'table_name': 'data.bank_accounts', 'UID_field': '_id', 'update_field': 'updated', 'refresh_time': '60', 'change_capture': 'True', 'array_column': 'data', 'schema_lower_range': '2022-11-03T00:34:52.158336Z', 'schema_upper_range': '2023-07-03T00:34:52.158246Z', 'schema_sample_size': 10000, 'exclude_fields': ['credentials', 'api_keys', 'password', 'firstname', 'lastname'], 'overwrite_existing': True, 'batch_lower_range': '2021-07-13T00:41:48.791992Z', 'batch_upper_range': '2023-06-19T12:41:48.792085Z'}''')
+
+# COMMAND ----------
+
 from pyspark.sql.streaming import *
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
@@ -43,6 +51,10 @@ schema_upper_range = parent_payload['schema_upper_range']
 schema_sample_size = parent_payload['schema_sample_size']
 exclude_fields = parent_payload['exclude_fields']
 overwrite_existing = parent_payload['overwrite_existing']
+try:
+    array_column = parent_payload['array_column']
+except:
+    array_column = ''
 
 print(table_name)
 
@@ -56,28 +68,6 @@ connectionString = dbutils.secrets.get(scope=source_scope, key=source_key)
 
 path = f"abfss://{storage_container}@{storage_account_name}.dfs.core.windows.net/{raw_zone}/{table_name}"
 dbutils.fs.mkdirs(path)
-
-# COMMAND ----------
-
-def schemaFlatten(schema, prefix=None):
-    fields = []
-    for field in schema.fields:
-        name = prefix + '.' + field.name if prefix else field.name
-        dtype = field.dataType
-        #if isinstance(dtype, ArrayType):
-        #    dtype = dtype.elementType
-
-        if isinstance(dtype, StructType):
-            fields += schemaFlatten(dtype, prefix=name)
-
-        else:
-            fields.append(col(name).alias(name.replace('.','__')))
-    return fields
-
-def dataFlatten(microBatchOutputDF):
-    flattened_schema = schemaFlatten(microBatchOutputDF.schema)
-    microBatchOutputDF = microBatchOutputDF.select(flattened_schema)
-    return microBatchOutputDF
 
 # COMMAND ----------
 
@@ -107,34 +97,30 @@ if overwrite_existing == True:
         .option('sql.inferSchema.mapTypes.minimum.key.size', 10000)
         .load()
         ).limit(10000)
-   
 
-    flatstructuredconnectionSchema = dataFlatten(query).schema
+    rawconnectionSchema = "StructType(["
+    for col in query.columns:
+        rawconnectionSchema = rawconnectionSchema + f"StructField('{col}', StringType(), True),"
+    rawconnectionSchema = (rawconnectionSchema.strip(',') + "])")
+
+    os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/raw_{table_name}_schema.txt"), exist_ok=True)
+
+    open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/raw_{table_name}_schema.txt", "w").write(str(repr(rawconnectionSchema)))
+
+
 
     structuredconnectionSchema = query.schema
-    
-    
+        
     os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/structured_{table_name}_schema.txt"), exist_ok=True)
 
     open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/structured_{table_name}_schema.txt", "w").write(str(repr(structuredconnectionSchema)))
 
-
+    flatstructuredconnectionSchema = dataFlatten(arrayExplode(query, array_column, 1),1).schema
 
     os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/flat_structured_{table_name}_schema.txt"), exist_ok=True)
 
     open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/flat_structured_{table_name}_schema.txt", "w").write(str(repr(flatstructuredconnectionSchema)))
 
-
-    rawconnectionSchema = "StructType(["
-    for col in query.columns:
-        rawconnectionSchema = rawconnectionSchema + f"StructField('{col}', StringType(), True),"
-
-    rawconnectionSchema = (rawconnectionSchema.strip(',') + "])")
-
-
-    os.makedirs(os.path.dirname(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/raw_{table_name}_schema.txt"), exist_ok=True)
-
-    open(f"/Workspace/{root_path}/config/schema/mongodb/{table_name}/raw_{table_name}_schema.txt", "w").write(str(repr(rawconnectionSchema)))
 
 
 # COMMAND ----------
