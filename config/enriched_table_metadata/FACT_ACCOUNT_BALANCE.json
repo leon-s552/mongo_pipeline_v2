@@ -1,0 +1,67 @@
+{
+        "table_name": "FACT_ACCOUNT_BALANCE", 
+        "structured_table": "stage_data.bank_accounts_10",
+        "UID_field": "data__account_id",
+        "UID_code": "connection",
+        "update_field": "modified_datetime",
+        "update_code": "modified",
+        "created_field": "created_datetime",
+        "refresh_time": "60",
+        "table_metadata": [
+        {
+        "source_code": "connection"
+        ,"destination_name": "connection_id"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "user"
+        ,"destination_name": "user_id"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "company"
+        ,"destination_name": "company_id"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "osp"
+        ,"destination_name": "application"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }        
+        ,{
+        "source_code": "platform"
+        ,"destination_name": "platform"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "usage"
+        ,"destination_name": "usage"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "status"
+        ,"destination_name": "connection_status"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "created"
+        ,"destination_name": "created_datetime"
+        ,"destination_datatype": "timestamp"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "modified"
+        ,"destination_name": "modified_datetime"
+        ,"destination_datatype": "timestamp"
+        ,"change_tracked": "False"
+        }
+    ]
+}
+

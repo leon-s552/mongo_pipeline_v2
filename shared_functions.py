@@ -12,9 +12,6 @@ from pyspark.sql import Row, functions as F
 from databricks.sdk.runtime import *
 
 
-
-
-
 def notebook_invocation(notebook, timeout, argument):
     try:
         run_id = dbutils.notebook.run(
@@ -44,6 +41,35 @@ def upsertToDelta(source, target,UID, update, CD, batchId):
         .whenNotMatchedInsertAll()
         .execute())
 
+def arrayExplode(ArrayDataframe , ArrayColumn, batchId):
+    if ArrayColumn in ArrayDataframe.columns:
+        column_type = ArrayDataframe.schema[ArrayColumn].dataType
+        if str(column_type).startswith('StructType') and '[]' not in str(column_type):
+                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', F.to_json(ArrayDataframe[ArrayColumn]))
+                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, array(ArrayDataframe[ArrayColumn]))
+        elif str(column_type).startswith('ArrayType') and '[]' not in str(column_type):
+                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', F.to_json(ArrayDataframe[ArrayColumn]))
+                ArrayDataframe = ArrayDataframe
+        elif str(column_type).startswith('StringType'):
+                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', ArrayDataframe[ArrayColumn])
+                ArrayDataframe = (ArrayDataframe.withColumn(ArrayColumn , when(
+                                                            ( (ArrayDataframe[ArrayColumn] == '') 
+                                                            | (ArrayDataframe['data'].isNull())
+                                                            | (ArrayDataframe[ArrayColumn] == '[]')
+                                                            ) | 
+                                                            (   (~ArrayDataframe[ArrayColumn].startswith('[')) 
+                                                            & (~ArrayDataframe[ArrayColumn].startswith('{'))
+                                                            ), lit( '{}')).otherwise(ArrayDataframe[ArrayColumn])))
+                json_string = ArrayDataframe.select(F.col(ArrayColumn).alias('j')).rdd.map(lambda x: x.j)
+                schema_struct = spark.read.json(json_string).schema
+                schema_array = eval('ArrayType('+str(schema_struct)+',True)')
+                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, from_json(ArrayColumn, schema=schema_array))
+        else:
+            ArrayDataframe.withColumn(ArrayColumn + '_raw', ArrayDataframe[ArrayColumn].cast(StringType()))
+            ArrayDataframe = (ArrayDataframe.withColumn(ArrayColumn ,  array(lit('{}'))))
+
+    ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, explode(ArrayColumn))
+    return ArrayDataframe
 
 def schemaFlatten(schema, prefix=None):
     fields = []
@@ -55,17 +81,6 @@ def schemaFlatten(schema, prefix=None):
         else:
             fields.append(col(name).alias(name.replace('.','__')))
     return fields
-
-def arrayExplode(ArrayDataframe , ArrayColumn, batchId):
-    if ArrayColumn in ArrayDataframe.columns:
-        json_string = ArrayDataframe.select(col(ArrayColumn).alias('j')).rdd.map(lambda x: x.j)
-        schema_struct = spark.read.json(json_string).schema
-        schema_array = eval('ArrayType('+str(schema_struct)+',True)')
-        ArrayDataframe = ArrayDataframe.select('*', from_json(ArrayColumn, schema=schema_array).alias('jsonread'))
-        ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, explode('jsonread')).drop('jsonread')
-    else:
-        ArrayDataframe
-    return ArrayDataframe
 
 def dataFlatten(microBatchOutputDF, batchId):
     flattened_schema = schemaFlatten(microBatchOutputDF.schema)
@@ -90,8 +105,6 @@ def schemaconversion(microBatchOutputDF, schema, batchId):
         else:
             microBatchOutputDF = microBatchOutputDF.withColumn(col,F.col(col).cast(column_datatype))
     return microBatchOutputDF
-
-
 
 def cctableupdate(source, destination, UID_field, update_field,created_field, transformation_script, cc_script, batchId):
 

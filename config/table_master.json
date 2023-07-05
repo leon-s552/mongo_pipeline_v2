@@ -22,6 +22,14 @@
         "array_column": "data"
     },
     {
+        "table_name": "data.transactions", 
+        "UID_field": "_id",
+        "update_field": "updated",
+        "refresh_time": "60",
+        "change_capture": "True",
+        "array_column": "data"
+    },
+    {
         "table_name": "connection_data", 
         "UID_field": "_id",
         "update_field": "modified",

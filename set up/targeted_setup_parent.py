@@ -13,11 +13,12 @@ import toml
 table_list = json.loads('''
 [
     {
-        "table_name": "data.bank_accounts", 
+        "table_name": "data.transactions", 
         "UID_field": "_id",
         "update_field": "updated",
         "refresh_time": "60",
-        "change_capture": "True"
+        "change_capture": "True",
+        "array_column": "data"
     }
 ]
 ''')

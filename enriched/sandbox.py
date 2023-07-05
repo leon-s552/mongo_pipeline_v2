@@ -4,73 +4,72 @@
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC dbutils.widgets.text('table_data', """{
-# MAGIC         "table_name": "DIM_CONNECTION", 
-# MAGIC         "structured_table": "stage_connection_data_10",
-# MAGIC         "UID_field": "connection_id",
-# MAGIC         "UID_code": "connection",
-# MAGIC         "update_field": "modified_datetime",
-# MAGIC         "update_code": "modified",
-# MAGIC         "created_field": "created_datetime",
-# MAGIC         "refresh_time": "60",
-# MAGIC         "table_metadata": [
-# MAGIC         {
-# MAGIC         "source_code": "connection"
-# MAGIC         ,"destination_name": "connection_id"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "user"
-# MAGIC         ,"destination_name": "user_id"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "company"
-# MAGIC         ,"destination_name": "company_id"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "osp"
-# MAGIC         ,"destination_name": "application"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }        
-# MAGIC         ,{
-# MAGIC         "source_code": "platform"
-# MAGIC         ,"destination_name": "platform"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "usage"
-# MAGIC         ,"destination_name": "usage"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "status"
-# MAGIC         ,"destination_name": "connection_status"
-# MAGIC         ,"destination_datatype": "string"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "created"
-# MAGIC         ,"destination_name": "created_datetime"
-# MAGIC         ,"destination_datatype": "timestamp"
-# MAGIC         ,"change_tracked": "True"
-# MAGIC         }
-# MAGIC         ,{
-# MAGIC         "source_code": "modified"
-# MAGIC         ,"destination_name": "modified_datetime"
-# MAGIC         ,"destination_datatype": "timestamp"
-# MAGIC         ,"change_tracked": "False"
-# MAGIC         }
-# MAGIC     ]
-# MAGIC }""")
+dbutils.widgets.text('table_data', """{
+        "table_name": "DIM_CONNECTION", 
+        "structured_table": "stage_connection_data_10",
+        "UID_field": "connection_id",
+        "UID_code": "connection",
+        "update_field": "modified_datetime",
+        "update_code": "modified",
+        "created_field": "created_datetime",
+        "refresh_time": "60",
+        "table_metadata": [
+        {
+        "source_code": "connection"
+        ,"destination_name": "connection_id"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "user"
+        ,"destination_name": "user_id"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "company"
+        ,"destination_name": "company_id"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "osp"
+        ,"destination_name": "application"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }        
+        ,{
+        "source_code": "platform"
+        ,"destination_name": "platform"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "usage"
+        ,"destination_name": "usage"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "status"
+        ,"destination_name": "connection_status"
+        ,"destination_datatype": "string"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "created"
+        ,"destination_name": "created_datetime"
+        ,"destination_datatype": "timestamp"
+        ,"change_tracked": "True"
+        }
+        ,{
+        "source_code": "modified"
+        ,"destination_name": "modified_datetime"
+        ,"destination_datatype": "timestamp"
+        ,"change_tracked": "False"
+        }
+    ]
+}""")
 
 # COMMAND ----------
 
@@ -93,6 +92,8 @@ table_metadata = json.loads((open(f"/Workspace/{root_path}/config/enriched_table
 
 config = toml.load(f"/Workspace/{root_path}/config/config.toml")
 storage_account_name = config["ingest_parameters"]["storage_account"]
+
+config = toml.load(f"/Workspace/{root_path}/config/config.toml")
 
 source_name = storage_account_name = config["ingest_parameters"]["source"]
 storage_account_name = config["ingest_parameters"]["storage_account"]
@@ -264,3 +265,44 @@ def batchprocess(microBatchOutputDF, batchId):
 # COMMAND ----------
 
 dbutils.notebook.exit(dbutils.notebook.entry_point.getDbutils().notebook().getContext().jobId().toString())
+
+# COMMAND ----------
+
+root_path = '/'.join(json.loads(dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson())['extraContext']['notebook_path'].split('/')[:-2]).strip('/')
+
+config = toml.load(f"/Workspace/{root_path}/config/config.toml")
+storage_account_name = config["ingest_parameters"]["storage_account"]
+
+source_name = storage_account_name = config["ingest_parameters"]["source"]
+storage_account_name = config["ingest_parameters"]["storage_account"]
+storage_container = config["ingest_parameters"]["storage_container"]
+
+storage_scope = config["ingest_parameters"]["storage_scope"]
+storage_key = config["ingest_parameters"]["storage_key"]
+
+structured_zone = 'structured'
+enriched_zone = 'enriched'
+structured_table = 'stage_data.transactions_10'
+
+spark.conf.set(
+    f"fs.azure.account.key.{storage_account_name}.dfs.core.windows.net",
+    dbutils.secrets.get(scope=storage_scope, key=storage_key))
+
+
+spark.read.load(f"abfss://{storage_container}@{storage_account_name}.dfs.core.windows.net/{structured_zone}/{structured_table}").createOrReplaceTempView('view_source')
+
+
+# COMMAND ----------
+
+display(
+
+spark.sql('''
+          select * from view_source
+          --where data__account_id = '179478'
+          order by data__account_id, balance_date
+          
+          
+          
+          ''')
+
+)

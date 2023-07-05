@@ -3,7 +3,7 @@ dbutils.widgets.removeAll()
 
 # COMMAND ----------
 
-dbutils.widgets.text('table_data', '''{'table_name': 'data.bank_accounts', 'UID_field': '_id', 'update_field': 'updated', 'refresh_time': '60', 'change_capture': 'True', 'array_column': 'data', 'schema_lower_range': '2022-11-03T00:34:52.158336Z', 'schema_upper_range': '2023-07-03T00:34:52.158246Z', 'schema_sample_size': 10000, 'exclude_fields': ['credentials', 'api_keys', 'password', 'firstname', 'lastname'], 'overwrite_existing': True, 'batch_lower_range': '2021-07-13T00:41:48.791992Z', 'batch_upper_range': '2023-06-19T12:41:48.792085Z'}''')
+dbutils.widgets.text('table_data', '''{'table_name': 'data.bank_accounts', 'UID_field': '_id', 'update_field': 'updated', 'refresh_time': '60', 'change_capture': 'True', 'array_column': 'data', 'schema_lower_range': '2020-06-06T16:00:23.000Z', 'schema_upper_range': '2020-06-06T16:00:25.000Z', 'schema_sample_size': 10000, 'exclude_fields': ['credentials', 'api_keys', 'password', 'firstname', 'lastname'], 'overwrite_existing': True}''')
 
 # COMMAND ----------
 
@@ -126,3 +126,13 @@ if overwrite_existing == True:
 # COMMAND ----------
 
 dbutils.notebook.exit(dbutils.notebook.entry_point.getDbutils().notebook().getContext().jobId().toString())
+
+# COMMAND ----------
+
+ArrayDataframe  = query
+
+ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn + '_raw', ArrayDataframe[ArrayColumn].cast(StringType()))
+
+# COMMAND ----------
+
+display(ArrayDataframe)
