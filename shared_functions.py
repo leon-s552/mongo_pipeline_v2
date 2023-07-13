@@ -45,25 +45,26 @@ def arrayExplode(ArrayDataframe , ArrayColumn, batchId):
     if ArrayColumn in ArrayDataframe.columns:
         column_type = ArrayDataframe.schema[ArrayColumn].dataType
         if str(column_type).startswith('StructType') and '[]' not in str(column_type):
-                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', F.to_json(ArrayDataframe[ArrayColumn]))
-                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, array(ArrayDataframe[ArrayColumn]))
+            ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', F.to_json(ArrayDataframe[ArrayColumn]))
+            ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, array(ArrayDataframe[ArrayColumn]))
         elif str(column_type).startswith('ArrayType') and '[]' not in str(column_type):
-                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', F.to_json(ArrayDataframe[ArrayColumn]))
-                ArrayDataframe = ArrayDataframe
+            ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', F.to_json(ArrayDataframe[ArrayColumn]))
+            ArrayDataframe = ArrayDataframe
         elif str(column_type).startswith('StringType'):
-                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', ArrayDataframe[ArrayColumn])
-                ArrayDataframe = (ArrayDataframe.withColumn(ArrayColumn , when(
-                                                            ( (ArrayDataframe[ArrayColumn] == '') 
-                                                            | (ArrayDataframe['data'].isNull())
-                                                            | (ArrayDataframe[ArrayColumn] == '[]')
-                                                            ) | 
-                                                            (   (~ArrayDataframe[ArrayColumn].startswith('[')) 
-                                                            & (~ArrayDataframe[ArrayColumn].startswith('{'))
-                                                            ), lit( '{}')).otherwise(ArrayDataframe[ArrayColumn])))
-                json_string = ArrayDataframe.select(F.col(ArrayColumn).alias('j')).rdd.map(lambda x: x.j)
-                schema_struct = spark.read.json(json_string).schema
-                schema_array = eval('ArrayType('+str(schema_struct)+',True)')
-                ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, from_json(ArrayColumn, schema=schema_array))
+            ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn+ '_raw', ArrayDataframe[ArrayColumn])
+            ArrayDataframe = (ArrayDataframe.withColumn(ArrayColumn, when(
+                                                            (     (ArrayDataframe[ArrayColumn] == '') 
+                                                                | (ArrayDataframe['data'].isNull())
+                                                                | (ArrayDataframe[ArrayColumn] == '[]')
+                                                            )   | 
+                                                            (     (~ArrayDataframe[ArrayColumn].startswith('[')) #note: reverse logic (~)
+                                                                & (~ArrayDataframe[ArrayColumn].startswith('{')) #note: reverse logic (~)
+                                                            ), 
+                                                            lit( '{}')).otherwise(ArrayDataframe[ArrayColumn])))
+            json_string = ArrayDataframe.select(F.col(ArrayColumn).alias('j')).rdd.map(lambda x: x.j)
+            schema_struct = spark.read.json(json_string).schema
+            schema_array = eval('ArrayType('+str(schema_struct)+',True)')
+            ArrayDataframe = ArrayDataframe.withColumn(ArrayColumn, from_json(ArrayColumn, schema=schema_array))
         else:
             ArrayDataframe.withColumn(ArrayColumn + '_raw', ArrayDataframe[ArrayColumn].cast(StringType()))
             ArrayDataframe = (ArrayDataframe.withColumn(ArrayColumn ,  array(lit('{}'))))
